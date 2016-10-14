@@ -6,16 +6,24 @@ class Controller:
 		self.rightMotor = ev3.LargeMotor('outD')
 		self.colorSensor = ev3.ColorSensor('in1')
 
-	def goForward(self, speed = -300, time = None):
+	def goForward(self, leftSpeed = -300, rightSpeed = -300, time = None):
 		#ev3.Sound.speak('Go go go').wait()
 		
 		if time == None:	
-			self.leftMotor.run_forever(speed_sp = speed)
-			self.rightMotor.run_forever(speed_sp = speed)
+			self.rightMotor.run_forever(speed_sp = rightSpeed)
+			self.leftMotor.run_forever(speed_sp = leftSpeed)
 		else:	
-			self.leftMotor.run_timed(time_sp = 3000, speed_sp = speed)
-			self.rightMotor.run_timed(time_sp = 3000, speed_sp = speed)
+			self.leftMotor.run_timed(time_sp = 3000, speed_sp = leftSpeed)
+			self.rightMotor.run_timed(time_sp = 3000, speed_sp = rightSpeed)
 
+	def turnRight(self, speed = -300):
+		self.stop()
+		self.leftMotor.run_forever(speed_sp = speed)
+	
+	def turnLeft(self, speed = -300):
+		self.stop()
+		self.rightMotor.run_forever(speed_sp = speed)
+			
 	def readColor(self):	
 		return self.colorSensor.color()
 
@@ -64,17 +72,23 @@ class Controller:
 			return "Brown"
 
 	def followTheLine(self):
+		turn = self.turnRight
+		turnTheOtherSide = self.turnLeft
+		
 		while True:
 			if self.detectColor() == "Black":
-				self.goForward()
-			else:
-				self.stop()
-			
-			
+				turn()
+			elif self.detectColor() == "White": # if detected color is white, robot must turn to the other side
+				while self.detectColor == "White": # if is white robot must turn till he won't achieve black color again
+					turnTheOtherSide()
+				
+				""" now we must change functions, in order to when robot just achieve black color he must turning to the
+				same direction""" 
+				temp = turn 
+				turn = turnTheOtherSide
+				turnTheOtherSide = temp
 
 robot = Controller()
 
 robot.followTheLine()
-
-
 
