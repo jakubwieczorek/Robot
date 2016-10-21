@@ -6,7 +6,7 @@ class Controller:
 		self.rightMotor = ev3.LargeMotor('outD')
 		self.colorSensor = ev3.ColorSensor('in1')
 
-	def goForward(self, leftSpeed = -300, rightSpeed = -300, time = None):
+	def goForward(self, leftSpeed = -400, rightSpeed = -400, time = None):
 		#ev3.Sound.speak('Go go go').wait()
 		
 		if time == None:	
@@ -16,11 +16,11 @@ class Controller:
 			self.leftMotor.run_timed(time_sp = 3000, speed_sp = leftSpeed)
 			self.rightMotor.run_timed(time_sp = 3000, speed_sp = rightSpeed)
 
-	def turnRight(self, speed = -300):
+	def turnRight(self, speed = -800):
 		self.stop()
 		self.leftMotor.run_forever(speed_sp = speed)
 	
-	def turnLeft(self, speed = -300):
+	def turnLeft(self, speed = -800):
 		self.stop()
 		self.rightMotor.run_forever(speed_sp = speed)
 			
@@ -75,19 +75,29 @@ class Controller:
 		turn = self.turnRight
 		turnTheOtherSide = self.turnLeft
 		
-		while True:
-			if self.detectColor() == "Black":
-				turn()
-			elif self.detectColor() == "White": # if detected color is white, robot must turn to the other side
-				while self.detectColor == "White": # if is white robot must turn till he won't achieve black color again
-					turnTheOtherSide()
+		while True:		
+			if self.detectColor() == "Black":			
+				while True:
+					if self.detectColor() == "Black":
+						turn()
+					else:  # if detected color is different, robot must turn to the other side
+						while self.detectColor() != "Black": # if is white robot must turn till he won't achieve black color again
+							self.showDetectedColor()
+							turnTheOtherSide()
 				
-				""" now we must change functions, in order to when robot just achieve black color he must turning to the
-				same direction""" 
-				temp = turn 
-				turn = turnTheOtherSide
-				turnTheOtherSide = temp
-
+						# now we must change functions, in order to when robot just achieve black color he must turning to the
+						# same direction
+						self.showDetectedColor()
+						temp = turn 
+						turn = turnTheOtherSide
+						turnTheOtherSide = temp
+		
+		#flag = False  # we are on the left side
+		#while True:
+			
+			 
+			
+									
 robot = Controller()
 
 robot.followTheLine()
