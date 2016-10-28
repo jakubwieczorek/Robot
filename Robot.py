@@ -1,4 +1,5 @@
 import ev3dev.ev3 as ev3
+import time as Time
 
 class Controller:
 	def __init__(self):
@@ -6,8 +7,11 @@ class Controller:
 		self.rightMotor = ev3.LargeMotor('outD')
 		self.colorSensor = ev3.ColorSensor('in1')
 		self.colorSensor.mode = 'COL-REFLECT'
-
-	def goForward(self, leftSpeed = -400, rightSpeed = -400, time = None):
+		self.maxLightness = 72.0
+		self.minLightness = 7.0
+		self.integral = 0
+		self.prevError = 0
+	def goForward(self, leftSpeed = 100, rightSpeed = 100, time = None):
 		if time == None:	
 			self.rightMotor.run_forever(speed_sp = rightSpeed)
 			self.leftMotor.run_forever(speed_sp = leftSpeed)
@@ -15,14 +19,14 @@ class Controller:
 			self.leftMotor.run_timed(time_sp = 3000, speed_sp = leftSpeed)
 			self.rightMotor.run_timed(time_sp = 3000, speed_sp = rightSpeed)
 
-	def turnRight(self, speed = -300):
+	def turnRight(self, speed = 100):
 		self.stop()
-		self.rightMotor.run_forever(speed_sp = -speed)
+		self.rightMotor.run_forever(speed_sp = 0)
 		self.leftMotor.run_forever(speed_sp = speed)
 	
-	def turnLeft(self, speed = -300):
+	def turnLeft(self, speed = 100):
 		self.stop()
-		self.leftMotor.run_forever(speed_sp = -speed)
+		self.leftMotor.run_forever(speed_sp = 0)
 		self.rightMotor.run_forever(speed_sp = speed)
 			
 	def readColor(self):	
@@ -55,26 +59,50 @@ class Controller:
 		return self.colorSensor.value()
 	
 	def followTheLine(self):
-		turn = self.turnRight
-		turnTheOtherSide = self.turnLeft
+		speed = 200
 			
-		turn()
+		time = 0.0
+		
 		while True:
-			if self.detectLightness() > 10:	
-				# now we must change functions, in order to change engine
-				temp = turn 
-				turn = turnTheOtherSide
-				turnTheOtherSide = temp
-				
-				turn()
+			light = self.detectLightness()
+			"""
+			if light > 50 and time == 0.0:
+				time = Time.time()
 
-				while self.detectLightness() > 6:
+			if light < 25:
+				time = 0.0
+
+			if time - Time.time() > -5 and light > 50:
+				self.turnRight()
+				while self.detectLightness() > 26:
 					pass
+				time  = 0.0
+				light = self.detectLightness()
+			"""
+			self.goForward(speed * float((1 + self.turn(light))), speed * float((1 - self.turn(light))))
 	def __del__(self):
 		self.stop()	
-		 
+	
+	def turn(self, inputPos):
+		a = 2.0 / (self.minLightness - self.maxLightness)
+		error = inputPos - (self.minLightness + self.maxLightness) / 2
+	
+		if self.integral > -7000:
+			self.integral = self.integral + error
+		else:
+			self.integral = -pow(abs(self.integral), 0.5)
+	
+		print(self.integral)
+			
+		derivative = error - self.prevError
+		Ki = 0.01
+		Kd = 0.5
+		return a * (error + Ki * self.integral + Kd * derivative) 
 			
 									
 robot = Controller()
 
 robot.followTheLine()
+
+#while True:
+#	print(robot.detectLightness())
