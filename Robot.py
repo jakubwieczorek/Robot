@@ -11,7 +11,18 @@ class Controller:
 		self.minLightness = 7.0
 		self.integral = 0
 		self.prevError = 0
-		self.frontColorSensor = ev3.ColorSensor('in2')
+		self.frontColorSensor = ev3.ColorSensor('in4')
+		self.mediumMotor = ev3.MediumMotor('outB')
+	
+	def pickUp(self):
+		self.mediumMotor.run_forever(speed_sp = 400)
+		Time.sleep(2)
+		self.mediumMotor.stop()
+	
+	def drop(self):
+                self.mediumMotor.run_forever(speed_sp = -400)
+                Time.sleep(2)
+                self.mediumMotor.stop()
 
 	def goForward(self, leftSpeed = 100, rightSpeed = 100, time = None):
 		if time == None:	
@@ -77,7 +88,9 @@ class Controller:
 		if currentColor == "Black":
 			return 0		
 		elif currentColor == "Red":
-			self.drag()	
+			self.drag(self.pickUp)
+		elif currentColor == "Green":
+			self.drag(self.drop)	
 
 		a = 2.0 / (self.minLightness - self.maxLightness)
 		error = inputPos - (self.minLightness + self.maxLightness) / 2
@@ -92,27 +105,50 @@ class Controller:
 		Kd = 0.5
 		return a * (error + Ki * self.integral + Kd * derivative) 
 	
-	def drag(self):
+	def drag(self, upOrDown):
 		self.goForward(100, 100)		
 
 		Time.sleep(1.2) # line between two wheels
 			
 		self.goForward(100, -100) # first turn right
 		
-		Time.sleep(1.5) # block in fornt of robot
+		Time.sleep(1.3) # block in fornt of robot
+		
+		self.goForward(100, 100)
+		Time.sleep(0.4)
+		
+		self.goForward(100,-100)
+		Time.sleep(0.6)
 		
 		if self.detectColor(self.frontColorSensor) == "White" and self.detectColor(self.colorSensor) == "White": # but if he turned to wrong side
-			self.goForward(-100, 100)
-			Time.sleep(2.85)
-		
-		self.goForward(0,0)
-
-		while True:
 			pass
-							
-robot = Controller()
+		else:
+			self.goForward(-100, -100)
+			Time.sleep(1.3)
+			self.goForward(-100, 100)
+			Time.sleep(3.2)
+		
+		self.goForward(-100, -100)
+		Time.sleep(1.0)
+		
+		upOrDown()
+		
+		self.goForward(100, 100)
+		Time.sleep(3)
+		
+		self.goForward(100, -100)
+		while self.detectColor(self.frontColorSensor) != "Black":
+			pass	
+		self.followTheLine()	
 
-robot.followTheLine()
+if __name__ == "__main__":							
+	robot = Controller()
+	
+	robot.drop()
 
-#while True:
-#	print(robot.detectLightness())
+	robot.followTheLine()
+	#while True:
+	#	print(robot.detectLightness())
+	#	print(robot.infraredSensor.proximity())
+
+
