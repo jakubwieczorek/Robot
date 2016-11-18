@@ -7,13 +7,13 @@ class Controller:
 		self.rightMotor = ev3.LargeMotor('outD')
 		self.colorSensor = ev3.ColorSensor('in1')
 		self.colorSensor.mode = 'COL-REFLECT'
-		self.maxLightness = 72.0
-		self.minLightness = 7.0
+		self.maxLightness = 50.0
+		self.minLightness = 5.0
 		self.integral = 0
 		self.prevError = 0
 		self.frontColorSensor = ev3.ColorSensor('in4')
 		self.mediumMotor = ev3.MediumMotor('outB')
-	
+		self.withCube = False	
 	def pickUp(self):
 		self.mediumMotor.run_forever(speed_sp = 400)
 		Time.sleep(2)
@@ -72,7 +72,7 @@ class Controller:
 		return self.colorSensor.value()
 	
 	def followTheLine(self):
-		speed = 150
+		speed = 50
 		
 		while True:
 			light = self.detectLightness()
@@ -87,10 +87,14 @@ class Controller:
 
 		if currentColor == "Black":
 			return 0		
-		elif currentColor == "Red":
+		elif currentColor == "Red" and self.withCube == False:
 			self.drag(self.pickUp)
 		elif currentColor == "Green":
-			self.drag(self.drop)	
+			while(True):
+				pass
+			self.drag(self.drop)
+			self.withCube = True
+			
 
 		a = 2.0 / (self.minLightness - self.maxLightness)
 		error = inputPos - (self.minLightness + self.maxLightness) / 2
@@ -101,9 +105,10 @@ class Controller:
 			self.integral = -pow(abs(self.integral), 0.5)
 	
 		derivative = error - self.prevError
-		Ki = 0.01
-		Kd = 0.5
-		return a * (error + Ki * self.integral + Kd * derivative) 
+		Ki = 0.0
+		Kd = 0.6
+		Kp = 1.0
+		return a * (Kp * error + Ki * self.integral + Kd * derivative) 
 	
 	def drag(self, upOrDown):
 		self.goForward(100, 100)		
@@ -139,16 +144,22 @@ class Controller:
 		self.goForward(100, -100)
 		while self.detectColor(self.frontColorSensor) != "Black":
 			pass	
+		self.withCube = True
+		
 		self.followTheLine()	
 
 if __name__ == "__main__":							
 	robot = Controller()
 	
 	robot.drop()
-
+	#robot.goForward(300, 300)
+	#while(True):
+	#	pass
 	robot.followTheLine()
 	#while True:
 	#	print(robot.detectLightness())
 	#	print(robot.infraredSensor.proximity())
 
+
+rSensor.value()
 
