@@ -14,15 +14,16 @@ class Controller:
 		self.frontColorSensor = ev3.ColorSensor('in4')
 		self.mediumMotor = ev3.MediumMotor('outB')
 		self.withCube = False	
+
 	def pickUp(self):
 		self.mediumMotor.run_forever(speed_sp = 400)
-		Time.sleep(1)
+		Time.sleep(0.8)
 		self.mediumMotor.stop()
 	
 	
 	def drop(self):
                 self.mediumMotor.run_forever(speed_sp = -400)
-                Time.sleep(1)
+                Time.sleep(0.8)
                 self.mediumMotor.stop()
 
 	def goForward(self, leftSpeed = 100, rightSpeed = 100, time = None):
@@ -63,14 +64,14 @@ class Controller:
 		return self.colorSensor.value()
 	
 	def followTheLine(self):
-		speed = -100
+		speed = -200
 		
 		while True:
 			light = self.detectLightness()
 			self.goForward(speed * float((1.0 + self.turn(light))), speed * float((1.0 - self.turn(light))))
 	
 	def __del__(self):
-		self.stop()	
+		self.stop()
 	
 	def turn(self, inputPos):
 		currentColor = self.detectColor(self.frontColorSensor)		
@@ -79,7 +80,7 @@ class Controller:
 
 		if currentColor == "Black":
 			return 0
- 
+		""" 
 		elif currentColor == "Red" and self.withCube == False:
 			self.drag(self.pickUp)
 			return 0
@@ -87,12 +88,12 @@ class Controller:
 		elif currentColor == "Green" and self.withCube == True:
 			self.drag(self.drop)
 			return 0
-		
+		"""
 		a = 2.0 / (self.minLightness - self.maxLightness)
 		error = inputPos - (self.minLightness + self.maxLightness) / 2
 
 		derivative = error - self.prevError
-		Kd = 0.2
+		Kd = 0.4
 		Kp = 0.8
 
 		return a * (Kp * error + Kd * derivative)
@@ -106,33 +107,43 @@ class Controller:
 		
 		Time.sleep(1.8) # block in fornt of robot
 	
-		if self.detectColor(self.frontColorSensor) == "White" and self.detectColor(self.colorSensor) == "White": # but if he turned to wrong side
+		if self.detectColor(self.frontColorSensor) == "White":# and self.detectColor(self.colorSensor) == "White": # but if he turned to wrong side
 			pass
 		else:
 			self.goForward(-100, 100)
 			Time.sleep(3.4)
 		
 		self.goForward(100, 100)
-		Time.sleep(3.0)
+		if not self.withCube:
+			Time.sleep(3.0)
+		else:
+			Time.sleep(2.0)
 		
 		upOrDown()
 		
 		self.goForward(-100, -100)
+
+		if not self.withCube:
+			Time.sleep(3.0)
+		else:
+			Time.sleep(2.0)
+		
+		if self.withCube == False:
+			self.goForward(-100, 100)
+		else:
+			self.goForward(100, -100)
+
 		Time.sleep(3)
-		
-		self.goForward(100, -100)
-		
 		while self.detectColor(self.frontColorSensor) != "Black":
-			pass
-		
-		self.stop()
-			
-		self.withCube =not self.withCube	
+			pass	
+				
+		self.withCube = not self.withCube
 
 if __name__ == "__main__":							
 	robot = Controller()
-
-
+	
+	#robot.pickUp()
+	#robot.drop()
 	robot.followTheLine()
 	#while True:
 	#	print(robot.detectLightness())
